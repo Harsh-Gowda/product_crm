@@ -448,6 +448,46 @@ const ProductList = () => {
 
 function App() {
   const [activeTab, setActiveTab] = useState('products');
+  
+  // Check if Supabase is configured
+  const isSupabaseConfigured = 
+    import.meta.env.VITE_SUPABASE_URL && 
+    import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+    import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh', 
+        padding: '2rem',
+        textAlign: 'center',
+        background: '#0f172a',
+        color: 'white',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '1rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+          <Package size={48} style={{ color: '#3b82f6', marginBottom: '1rem' }} />
+          <h1 style={{ marginBottom: '1rem' }}>Configuration Required</h1>
+          <p style={{ color: '#94a3b8', marginBottom: '2rem', maxWidth: '400px' }}>
+            The Supabase environment variables are missing. Please add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to your deployment settings.
+          </p>
+          <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '0.5rem', textAlign: 'left', fontSize: '0.9rem' }}>
+            <p style={{ color: '#3b82f6', marginBottom: '0.5rem' }}>Next Steps:</p>
+            <ol style={{ paddingLeft: '1.2rem', color: '#cbd5e1' }}>
+              <li>Go to Vercel Project Settings</li>
+              <li>Add the Environment Variables</li>
+              <li>Redeploy the project</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
