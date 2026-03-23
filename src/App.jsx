@@ -105,11 +105,13 @@ const ProductList = () => {
       setEditFormData(null);
     } else {
       setExpandedId(product.product_id);
-      const techArr = Object.entries(product.technical_details || {}).map(([key, value], idx) => ({
-        id: `tech-${Date.now()}-${idx}`,
-        key,
-        value
-      }));
+      const techArr = Object.entries(product.technical_details || {})
+        .filter(([key]) => key !== 'raw_text')
+        .map(([key, value], idx) => ({
+          id: `tech-${Date.now()}-${idx}`,
+          key,
+          value
+        }));
       setEditFormData({ ...product, technical_details_arr: techArr });
     }
   };
@@ -388,13 +390,7 @@ const ProductList = () => {
                               <h3>Core Information</h3>
                               <div className="input-grid">
                                 <div className="input-group"><label>Product Name</label><input name="name" value={editFormData.name || ''} onChange={handleInputChange} /></div>
-                                <div className="input-group"><label>Brand</label><input name="brand" value={editFormData.brand || ''} onChange={handleInputChange} /></div>
                                 <div className="input-group"><label>Model Number</label><input name="model_number" value={editFormData.model_number || ''} onChange={handleInputChange} /></div>
-                                <div className="input-group"><label>Category</label>
-                                  <select name="category" value={editFormData.category || ''} onChange={handleInputChange}>
-                                    {categories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
-                                  </select>
-                                </div>
                               </div>
                             </div>
 
@@ -403,15 +399,6 @@ const ProductList = () => {
                               <div className="price-inputs">
                                 <div className="input-group"><label>MRP (₹)</label><input type="number" name="mrp" value={editFormData.mrp || ''} onChange={handleInputChange} /></div>
                                 <div className="input-group"><label>Showroom Price (₹)</label><input type="number" name="showroom_price" value={editFormData.showroom_price || ''} onChange={handleInputChange} /></div>
-                              </div>
-                              <div className="input-group" style={{ marginTop: '1rem' }}>
-                                <label><ImageIcon size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> Image Filename</label>
-                                <input 
-                                  type="text" 
-                                  placeholder="e.g. light_1.jpg" 
-                                  value={Array.isArray(editFormData.images) ? editFormData.images[0] || '' : editFormData.images || ''} 
-                                  onChange={(e) => setEditFormData({...editFormData, images: [e.target.value]})} 
-                                />
                               </div>
                             </div>
 
