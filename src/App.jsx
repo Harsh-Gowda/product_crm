@@ -302,9 +302,29 @@ const ProductList = () => {
         <div className="add-panel-container">
           <div className="inline-edit-panel add-panel">
             <div className="edit-grid">
+              <div className="edit-section media-section">
+                <h3>1. Media Preview</h3>
+                <div className="edit-image-preview">
+                  {newProduct.images?.[0] ? (
+                    <img src={`/products/${newProduct.images[0]}`} alt="Preview" />
+                  ) : (
+                    <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
+                  )}
+                </div>
+                <div className="input-group">
+                  <label><ImageIcon size={12} /> Image Filename</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. light_1.jpg" 
+                    value={newProduct.images?.[0] || ''} 
+                    onChange={(e) => setNewProduct({...newProduct, images: [e.target.value]})} 
+                  />
+                </div>
+              </div>
+
               <div className="edit-section">
-                <h3>1. Basic Information</h3>
-                <div className="input-grid">
+                <h3>2. Basic Information</h3>
+                <div className="input-grid" style={{ gridTemplateColumns: '1fr' }}>
                   <div className="input-group"><label><Tag size={12} /> SKU (Required)</label><input name="sku" value={newProduct.sku} onChange={(e) => handleInputChange(e, true)} placeholder="e.g. MAG-MWL-123" /></div>
                   <div className="input-group"><label>Product Name</label><input name="name" value={newProduct.name} onChange={(e) => handleInputChange(e, true)} placeholder="e.g. Wall Light Modern" /></div>
                   <div className="input-group"><label>Brand</label><input name="brand" value={newProduct.brand} onChange={(e) => handleInputChange(e, true)} /></div>
@@ -318,19 +338,10 @@ const ProductList = () => {
               </div>
 
               <div className="edit-section">
-                <h3>2. Pricing & Media</h3>
-                <div className="price-inputs">
+                <h3>3. Pricing</h3>
+                <div className="price-inputs" style={{ gridTemplateColumns: '1fr' }}>
                   <div className="input-group"><label>MRP (₹)</label><input type="number" name="mrp" value={newProduct.mrp} onChange={(e) => handleInputChange(e, true)} /></div>
                   <div className="input-group"><label>Showroom Price (₹)</label><input type="number" name="showroom_price" value={newProduct.showroom_price} onChange={(e) => handleInputChange(e, true)} /></div>
-                </div>
-                <div className="input-group" style={{ marginTop: '1rem' }}>
-                  <label><ImageIcon size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> Image Filename</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. light_1.jpg" 
-                    value={newProduct.images?.[0] || ''} 
-                    onChange={(e) => setNewProduct({...newProduct, images: [e.target.value]})} 
-                  />
                 </div>
               </div>
 
@@ -386,17 +397,45 @@ const ProductList = () => {
                       <td colSpan="5">
                         <div className="inline-edit-panel">
                           <div className="edit-grid">
-                            <div className="edit-section">
-                              <h3>Core Information</h3>
-                              <div className="input-grid">
-                                <div className="input-group"><label>Product Name</label><input name="name" value={editFormData.name || ''} onChange={handleInputChange} /></div>
-                                <div className="input-group"><label>Model Number</label><input name="model_number" value={editFormData.model_number || ''} onChange={handleInputChange} /></div>
+                            <div className="edit-section media-section">
+                              <h3>Media Preview</h3>
+                              <div className="edit-image-preview">
+                                {editFormData.images?.[0] ? (
+                                  <img src={`/products/${editFormData.images[0]}`} alt="Preview" onError={(e) => { e.target.style.display='none'; }} />
+                                ) : (
+                                  <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
+                                )}
+                              </div>
+                              <div className="input-group">
+                                <label><ImageIcon size={12} /> Image Filename</label>
+                                <input 
+                                  type="text" 
+                                  placeholder="e.g. light_1.jpg" 
+                                  value={editFormData.images?.[0] || ''} 
+                                  onChange={(e) => setEditFormData({...editFormData, images: [e.target.value]})} 
+                                />
                               </div>
                             </div>
 
                             <div className="edit-section">
-                              <h3>Pricing & Media</h3>
-                              <div className="price-inputs">
+                              <h3>Core Information</h3>
+                              <div className="input-grid" style={{ gridTemplateColumns: '1fr' }}>
+                                <div className="input-group"><label><Tag size={12} /> SKU</label><input name="sku" value={editFormData.sku || ''} onChange={handleInputChange} /></div>
+                                <div className="input-group"><label>Product Name</label><input name="name" value={editFormData.name || ''} onChange={handleInputChange} /></div>
+                                <div className="input-group"><label>Brand</label><input name="brand" value={editFormData.brand || ''} onChange={handleInputChange} /></div>
+                                <div className="input-group"><label><Hash size={12} /> Model Number</label><input name="model_number" value={editFormData.model_number || ''} onChange={handleInputChange} /></div>
+                                <div className="input-group">
+                                  <label>Category</label>
+                                  <select name="category" value={editFormData.category || ''} onChange={handleInputChange}>
+                                    {categories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="edit-section">
+                              <h3>Pricing</h3>
+                              <div className="price-inputs" style={{ gridTemplateColumns: '1fr' }}>
                                 <div className="input-group"><label>MRP (₹)</label><input type="number" name="mrp" value={editFormData.mrp || ''} onChange={handleInputChange} /></div>
                                 <div className="input-group"><label>Showroom Price (₹)</label><input type="number" name="showroom_price" value={editFormData.showroom_price || ''} onChange={handleInputChange} /></div>
                               </div>
