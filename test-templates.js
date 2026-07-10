@@ -5,7 +5,7 @@ dotenv.config();
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
 async function checkTemplates() {
-  const { data, error } = await supabase.from('product_templates').select('*').limit(1);
+  const { data, error } = await supabase.from('product_templates').select('*').limit(5);
   if (error) {
     console.error('Error:', error);
   } else {

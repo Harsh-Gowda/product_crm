@@ -61,10 +61,12 @@ const ProductList = () => {
   const [editFormData, setEditFormData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [templates, setTemplates] = useState([]);
 
   // Add Product State
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProduct, setNewProduct] = useState({
+    templateId: '',
     sku: '',
     name: '',
     brand: 'Magnific',
@@ -82,6 +84,16 @@ const ProductList = () => {
 
   const fetchProducts = async () => {
     setLoading(true);
+    
+    // Fetch Templates
+    const { data: temp_data, error: temp_error } = await supabase
+      .from('product_templates')
+      .select('templateId, name, skuFamily');
+      
+    if (!temp_error && temp_data) {
+      setTemplates(temp_data);
+    }
+
     const { data, error } = await supabase
       .from('product_variants')
       .select('*')
@@ -177,6 +189,13 @@ const ProductList = () => {
     }, {});
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    const filename = imagePath.split('/').pop();
+    return `/products/${filename}`;
+  };
+
   const handleSave = async () => {
     if (!editFormData) return;
     setSaving(true);
@@ -223,14 +242,13 @@ const ProductList = () => {
       alert('SKU and Name are required');
       return;
     }
-    
-    const templateIdStr = window.prompt("Adding a product variant requires a valid templateId (UUID) from the product_templates table. Please enter a valid templateId:");
-    if (!templateIdStr) {
-      setSaving(false);
+    if (!newProduct.templateId) {
+      alert('Please select a Product Template');
       return;
     }
 
     setSaving(true);
+    const templateIdStr = newProduct.templateId;
     const finalTech = techArrToObject(newProduct.technical_details_arr);
     
     const finalPayload = {
@@ -281,7 +299,7 @@ const ProductList = () => {
         }, ...prev]);
       }
       setNewProduct({
-        sku: '', name: '', brand: 'Magnific', model_number: '', category: 'Wall Lights',
+        templateId: '', sku: '', name: '', brand: 'Magnific', model_number: '', category: 'Wall Lights',
         mrp: '', showroom_price: '', images: [], technical_details_arr: []
       });
       setShowAddForm(false);
@@ -364,7 +382,7 @@ const ProductList = () => {
                 <h3>1. Media Preview</h3>
                 <div className="edit-image-preview">
                   {newProduct.images?.[0] ? (
-                    <img src={newProduct.images[0].startsWith('/') || newProduct.images[0].startsWith('http') ? newProduct.images[0] : `/products/${newProduct.images[0]}`} alt="Preview" />
+                    <img src={getImageUrl(newProduct.images[0])} alt="Preview" />
                   ) : (
                     <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
                   )}
@@ -383,6 +401,15 @@ const ProductList = () => {
               <div className="edit-section">
                 <h3>2. Basic Information</h3>
                 <div className="input-grid" style={{ gridTemplateColumns: '1fr' }}>
+                  <div className="input-group">
+                    <label>Template (Required)</label>
+                    <select name="templateId" value={newProduct.templateId} onChange={(e) => handleInputChange(e, true)}>
+                      <option value="">Select a template</option>
+                      {templates.map(t => (
+                        <option key={t.templateId} value={t.templateId}>{t.name || t.skuFamily}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="input-group"><label><Tag size={12} /> SKU (Required)</label><input name="sku" value={newProduct.sku} onChange={(e) => handleInputChange(e, true)} placeholder="e.g. MAG-MWL-123" /></div>
                   <div className="input-group"><label>Product Name</label><input name="name" value={newProduct.name} onChange={(e) => handleInputChange(e, true)} placeholder="e.g. Wall Light Modern" /></div>
                   <div className="input-group"><label>Brand</label><input name="brand" value={newProduct.brand} onChange={(e) => handleInputChange(e, true)} /></div>
@@ -439,7 +466,7 @@ const ProductList = () => {
                     <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={product.is_reviewed || false} onChange={() => handleToggleReviewed(product)} /></td>
                     <td>
                       <div className="product-thumb">
-                        {product.images?.[0] ? (<img src={product.images[0].startsWith('/') || product.images[0].startsWith('http') ? product.images[0] : `/products/${product.images[0]}`} alt={product.name} />) : (<div className="no-image"><Package size={16} /></div>)}
+                        {product.images?.[0] ? (<img src={getImageUrl(product.images[0])} alt={product.name} />) : (<div className="no-image"><Package size={16} /></div>)}
                       </div>
                     </td>
                     <td><div className="product-info"><div className="product-name">{product.name}</div><div className="product-brand">{product.brand || ''} {product.model_number || ''}</div></div></td>
@@ -459,7 +486,7 @@ const ProductList = () => {
                               <h3>Media Preview</h3>
                               <div className="edit-image-preview">
                                 {editFormData.images?.[0] ? (
-                                  <img src={editFormData.images[0].startsWith('/') || editFormData.images[0].startsWith('http') ? editFormData.images[0] : `/products/${editFormData.images[0]}`} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
+                                  <img src={getImageUrl(editFormData.images[0])} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
                                 ) : (
                                   <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
                                 )}
