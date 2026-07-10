@@ -90,8 +90,24 @@ const ProductList = () => {
     if (error) {
       console.error('Error fetching products:', error);
     } else {
-      setProducts(data);
-      const dbCategories = [...new Set(data.map(p => p.category).filter(Boolean))];
+      const mappedData = data.map(p => ({
+        id: p.variantId,
+        variantId: p.variantId,
+        templateId: p.templateId,
+        sku: p.sku || '',
+        name: p.variantName || '',
+        mrp: p.catalogPrice || 0,
+        showroom_price: p.showroomPrice || 0,
+        is_reviewed: p.isSellable || false,
+        brand: p.attributes?.brand || 'Magnific',
+        category: p.attributes?.category || 'Wall Lights',
+        model_number: p.attributes?.model_number || '',
+        images: p.attributes?.media?.images || p.attributes?.images || [],
+        technical_details: p.attributes?.technicalDetails || p.attributes?.technical_details || {},
+        original_attributes: p.attributes || {}
+      }));
+      setProducts(mappedData);
+      const dbCategories = [...new Set(mappedData.map(p => p.category).filter(Boolean))];
       const baseCategories = ['Wall Lights', 'Chandeliers', 'Table Lamps', 'Floor Lamps', 'Surface', 'Pendant Light', 'Spot Light', 'Magnetic Track'];
       const uniqueCategories = [...new Set([...baseCategories, ...dbCategories])].sort();
       setCategories(uniqueCategories);
@@ -100,11 +116,11 @@ const ProductList = () => {
   };
 
   const handleToggleExpand = (product) => {
-    if (expandedId === product.product_id) {
+    if (expandedId === product.id) {
       setExpandedId(null);
       setEditFormData(null);
     } else {
-      setExpandedId(product.product_id);
+      setExpandedId(product.id);
       const techArr = Object.entries(product.technical_details || {})
         .filter(([key]) => key !== 'raw_text')
         .map(([key, value], idx) => ({
@@ -165,27 +181,37 @@ const ProductList = () => {
     if (!editFormData) return;
     setSaving(true);
     const finalTech = techArrToObject(editFormData.technical_details_arr);
-    const { product_id, createdAt, updatedAt, technical_details_arr, ...updatePayload } = editFormData;
-
-    if (updatePayload.mrp) updatePayload.mrp = parseFloat(updatePayload.mrp);
-    if (updatePayload.showroom_price) updatePayload.showroom_price = parseFloat(updatePayload.showroom_price);
-
+    
     const finalPayload = {
-      ...updatePayload,
-      technical_details: finalTech,
-      updatedAt: new Date().toISOString()
+      sku: editFormData.sku,
+      variantName: editFormData.name,
+      catalogPrice: editFormData.mrp ? parseFloat(editFormData.mrp) : 0,
+      showroomPrice: editFormData.showroom_price ? parseFloat(editFormData.showroom_price) : 0,
+      isSellable: editFormData.is_reviewed !== undefined ? editFormData.is_reviewed : true,
+      updatedAt: new Date().toISOString(),
+      attributes: {
+        ...(editFormData.original_attributes || {}),
+        brand: editFormData.brand,
+        category: editFormData.category,
+        model_number: editFormData.model_number,
+        media: {
+          ...(editFormData.original_attributes?.media || {}),
+          images: editFormData.images
+        },
+        technicalDetails: finalTech
+      }
     };
 
     const { error } = await supabase
       .from('product_variants')
       .update(finalPayload)
-      .eq('product_id', product_id);
+      .eq('variantId', editFormData.variantId);
 
     if (error) {
       alert('Error saving product: ' + error.message);
     } else {
       setProducts(prev => prev.map(p =>
-        p.product_id === product_id ? { ...p, ...finalPayload } : p
+        p.id === editFormData.id ? { ...p, ...editFormData, technical_details: finalTech } : p
       ));
       setExpandedId(null);
     }
@@ -197,18 +223,35 @@ const ProductList = () => {
       alert('SKU and Name are required');
       return;
     }
+    
+    const templateIdStr = window.prompt("Adding a product variant requires a valid templateId (UUID) from the product_templates table. Please enter a valid templateId:");
+    if (!templateIdStr) {
+      setSaving(false);
+      return;
+    }
+
     setSaving(true);
     const finalTech = techArrToObject(newProduct.technical_details_arr);
-    const { technical_details_arr, ...payload } = newProduct;
-
-    if (payload.mrp) payload.mrp = parseFloat(payload.mrp);
-    if (payload.showroom_price) payload.showroom_price = parseFloat(payload.showroom_price);
-
+    
     const finalPayload = {
-      ...payload,
-      technical_details: finalTech,
+      variantId: crypto.randomUUID(),
+      templateId: templateIdStr,
+      sku: newProduct.sku,
+      variantName: newProduct.name,
+      catalogPrice: newProduct.mrp ? parseFloat(newProduct.mrp) : 0,
+      showroomPrice: newProduct.showroom_price ? parseFloat(newProduct.showroom_price) : 0,
+      isSellable: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      attributes: {
+        brand: newProduct.brand,
+        category: newProduct.category,
+        model_number: newProduct.model_number,
+        media: {
+          images: newProduct.images
+        },
+        technicalDetails: finalTech
+      }
     };
 
     const { data, error } = await supabase
@@ -220,7 +263,22 @@ const ProductList = () => {
       alert('Error adding product: ' + error.message);
     } else {
       if (data && data[0]) {
-        setProducts(prev => [data[0], ...prev]);
+        const p = data[0];
+        setProducts(prev => [{
+          id: p.variantId,
+          variantId: p.variantId,
+          templateId: p.templateId,
+          sku: p.sku || '',
+          name: p.variantName || '',
+          mrp: p.catalogPrice || 0,
+          showroom_price: p.showroomPrice || 0,
+          is_reviewed: p.isSellable || false,
+          brand: p.attributes?.brand || 'Magnific',
+          category: p.attributes?.category || 'Wall Lights',
+          model_number: p.attributes?.model_number || '',
+          images: p.attributes?.images || [],
+          technical_details: p.attributes?.technical_details || {}
+        }, ...prev]);
       }
       setNewProduct({
         sku: '', name: '', brand: 'Magnific', model_number: '', category: 'Wall Lights',
@@ -234,10 +292,10 @@ const ProductList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     setSaving(true);
-    const { error } = await supabase.from('product_variants').delete().eq('product_id', id);
+    const { error } = await supabase.from('product_variants').delete().eq('variantId', id);
     if (error) alert('Error deleting product: ' + error.message);
     else {
-      setProducts(prev => prev.filter(p => p.product_id !== id));
+      setProducts(prev => prev.filter(p => p.id !== id));
       setExpandedId(null);
     }
     setSaving(false);
@@ -245,9 +303,9 @@ const ProductList = () => {
 
   const handleToggleReviewed = async (product) => {
     const newValue = !product.is_reviewed;
-    const { error } = await supabase.from('product_variants').update({ is_reviewed: newValue }).eq('product_id', product.product_id);
+    const { error } = await supabase.from('product_variants').update({ isSellable: newValue }).eq('variantId', product.variantId);
     if (!error) {
-      setProducts(prev => prev.map(p => p.product_id === product.product_id ? { ...p, is_reviewed: newValue } : p));
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_reviewed: newValue } : p));
     }
   };
 
@@ -306,7 +364,7 @@ const ProductList = () => {
                 <h3>1. Media Preview</h3>
                 <div className="edit-image-preview">
                   {newProduct.images?.[0] ? (
-                    <img src={`/products/${newProduct.images[0]}`} alt="Preview" />
+                    <img src={newProduct.images[0].startsWith('/') || newProduct.images[0].startsWith('http') ? newProduct.images[0] : `/products/${newProduct.images[0]}`} alt="Preview" />
                   ) : (
                     <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
                   )}
@@ -376,23 +434,23 @@ const ProductList = () => {
             </thead>
             <tbody>
               {filteredProducts.map((product) => (
-                <React.Fragment key={product.product_id}>
-                  <tr className={`${expandedId === product.product_id ? 'active-row' : ''} ${product.is_reviewed ? 'reviewed-row' : ''}`} onClick={() => handleToggleExpand(product)}>
+                <React.Fragment key={product.id}>
+                  <tr className={`${expandedId === product.id ? 'active-row' : ''} ${product.is_reviewed ? 'reviewed-row' : ''}`} onClick={() => handleToggleExpand(product)}>
                     <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={product.is_reviewed || false} onChange={() => handleToggleReviewed(product)} /></td>
                     <td>
                       <div className="product-thumb">
-                        {product.images?.[0] ? (<img src={`/products/${product.images[0]}`} alt={product.name} />) : (<div className="no-image"><Package size={16} /></div>)}
+                        {product.images?.[0] ? (<img src={product.images[0].startsWith('/') || product.images[0].startsWith('http') ? product.images[0] : `/products/${product.images[0]}`} alt={product.name} />) : (<div className="no-image"><Package size={16} /></div>)}
                       </div>
                     </td>
                     <td><div className="product-info"><div className="product-name">{product.name}</div><div className="product-brand">{product.brand || ''} {product.model_number || ''}</div></div></td>
                     <td><div className="price-tag">₹{product.showroom_price?.toLocaleString() || 0}</div></td>
                     <td className="actions-cell">
-                      <button className="icon-btn">{expandedId === product.product_id ? <ChevronUp size={18} /> : <Edit2 size={16} />}</button>
-                      <button className="icon-btn delete-btn" onClick={(e) => { e.stopPropagation(); handleDelete(product.product_id); }}><Trash2 size={16} /></button>
+                      <button className="icon-btn">{expandedId === product.id ? <ChevronUp size={18} /> : <Edit2 size={16} />}</button>
+                      <button className="icon-btn delete-btn" onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}><Trash2 size={16} /></button>
                     </td>
                   </tr>
 
-                  {expandedId === product.product_id && (
+                  {expandedId === product.id && (
                     <tr className="detail-row">
                       <td colSpan="5">
                         <div className="inline-edit-panel">
@@ -401,7 +459,7 @@ const ProductList = () => {
                               <h3>Media Preview</h3>
                               <div className="edit-image-preview">
                                 {editFormData.images?.[0] ? (
-                                  <img src={`/products/${editFormData.images[0]}`} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
+                                  <img src={editFormData.images[0].startsWith('/') || editFormData.images[0].startsWith('http') ? editFormData.images[0] : `/products/${editFormData.images[0]}`} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
                                 ) : (
                                   <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
                                 )}
