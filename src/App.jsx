@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import './App.css';
-import { 
-  LayoutGrid, 
-  Package, 
-  Users, 
-  Settings, 
-  Search, 
-  Plus, 
-  Edit2, 
-  Trash2, 
+import {
+  LayoutGrid,
+  Package,
+  Users,
+  Settings,
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
   Save,
   X,
   ChevronDown,
@@ -61,14 +61,14 @@ const ProductList = () => {
   const [editFormData, setEditFormData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  
+
   // Add Product State
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newProduct, setNewProduct] = useState({ 
-    sku: '', 
-    name: '', 
-    brand: 'Magnific', 
-    model_number: '', 
+  const [newProduct, setNewProduct] = useState({
+    sku: '',
+    name: '',
+    brand: 'Magnific',
+    model_number: '',
     category: 'Wall Lights',
     mrp: '',
     showroom_price: '',
@@ -83,10 +83,10 @@ const ProductList = () => {
   const fetchProducts = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('products')
+      .from('product_variants')
       .select('*')
-      .order('updated_at', { ascending: false });
-    
+      .order('updatedAt', { ascending: false });
+
     if (error) {
       console.error('Error fetching products:', error);
     } else {
@@ -129,7 +129,7 @@ const ProductList = () => {
     const setTarget = isNew ? setNewProduct : setEditFormData;
     setTarget(prev => ({
       ...prev,
-      technical_details_arr: prev.technical_details_arr.map(item => 
+      technical_details_arr: prev.technical_details_arr.map(item =>
         item.id === id ? { ...item, [field]: value } : item
       )
     }));
@@ -165,26 +165,26 @@ const ProductList = () => {
     if (!editFormData) return;
     setSaving(true);
     const finalTech = techArrToObject(editFormData.technical_details_arr);
-    const { product_id, created_at, updated_at, technical_details_arr, ...updatePayload } = editFormData;
-    
+    const { product_id, createdAt, updatedAt, technical_details_arr, ...updatePayload } = editFormData;
+
     if (updatePayload.mrp) updatePayload.mrp = parseFloat(updatePayload.mrp);
     if (updatePayload.showroom_price) updatePayload.showroom_price = parseFloat(updatePayload.showroom_price);
-    
-    const finalPayload = { 
-      ...updatePayload, 
+
+    const finalPayload = {
+      ...updatePayload,
       technical_details: finalTech,
-      updated_at: new Date().toISOString() 
+      updatedAt: new Date().toISOString()
     };
 
     const { error } = await supabase
-      .from('products')
+      .from('product_variants')
       .update(finalPayload)
       .eq('product_id', product_id);
 
     if (error) {
       alert('Error saving product: ' + error.message);
     } else {
-      setProducts(prev => prev.map(p => 
+      setProducts(prev => prev.map(p =>
         p.product_id === product_id ? { ...p, ...finalPayload } : p
       ));
       setExpandedId(null);
@@ -200,19 +200,19 @@ const ProductList = () => {
     setSaving(true);
     const finalTech = techArrToObject(newProduct.technical_details_arr);
     const { technical_details_arr, ...payload } = newProduct;
-    
+
     if (payload.mrp) payload.mrp = parseFloat(payload.mrp);
     if (payload.showroom_price) payload.showroom_price = parseFloat(payload.showroom_price);
-    
-    const finalPayload = { 
-      ...payload, 
+
+    const finalPayload = {
+      ...payload,
       technical_details: finalTech,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     const { data, error } = await supabase
-      .from('products')
+      .from('product_variants')
       .insert([finalPayload])
       .select();
 
@@ -222,7 +222,7 @@ const ProductList = () => {
       if (data && data[0]) {
         setProducts(prev => [data[0], ...prev]);
       }
-      setNewProduct({ 
+      setNewProduct({
         sku: '', name: '', brand: 'Magnific', model_number: '', category: 'Wall Lights',
         mrp: '', showroom_price: '', images: [], technical_details_arr: []
       });
@@ -234,7 +234,7 @@ const ProductList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     setSaving(true);
-    const { error } = await supabase.from('products').delete().eq('product_id', id);
+    const { error } = await supabase.from('product_variants').delete().eq('product_id', id);
     if (error) alert('Error deleting product: ' + error.message);
     else {
       setProducts(prev => prev.filter(p => p.product_id !== id));
@@ -245,13 +245,13 @@ const ProductList = () => {
 
   const handleToggleReviewed = async (product) => {
     const newValue = !product.is_reviewed;
-    const { error } = await supabase.from('products').update({ is_reviewed: newValue }).eq('product_id', product.product_id);
+    const { error } = await supabase.from('product_variants').update({ is_reviewed: newValue }).eq('product_id', product.product_id);
     if (!error) {
       setProducts(prev => prev.map(p => p.product_id === product.product_id ? { ...p, is_reviewed: newValue } : p));
     }
   };
 
-  const filteredProducts = products.filter(p => 
+  const filteredProducts = products.filter(p =>
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -267,9 +267,9 @@ const ProductList = () => {
         <div className="header-actions">
           <div className="search-bar">
             <Search size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by SKU, name, or category..." 
+            <input
+              type="text"
+              placeholder="Search by SKU, name, or category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -313,11 +313,11 @@ const ProductList = () => {
                 </div>
                 <div className="input-group">
                   <label><ImageIcon size={12} /> Image Filename</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. light_1.jpg" 
-                    value={newProduct.images?.[0] || ''} 
-                    onChange={(e) => setNewProduct({...newProduct, images: [e.target.value]})} 
+                  <input
+                    type="text"
+                    placeholder="e.g. light_1.jpg"
+                    value={newProduct.images?.[0] || ''}
+                    onChange={(e) => setNewProduct({ ...newProduct, images: [e.target.value] })}
                   />
                 </div>
               </div>
@@ -401,18 +401,18 @@ const ProductList = () => {
                               <h3>Media Preview</h3>
                               <div className="edit-image-preview">
                                 {editFormData.images?.[0] ? (
-                                  <img src={`/products/${editFormData.images[0]}`} alt="Preview" onError={(e) => { e.target.style.display='none'; }} />
+                                  <img src={`/products/${editFormData.images[0]}`} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
                                 ) : (
                                   <div className="no-image-large"><ImageIcon size={48} /><span>No Image</span></div>
                                 )}
                               </div>
                               <div className="input-group">
                                 <label><ImageIcon size={12} /> Image Filename</label>
-                                <input 
-                                  type="text" 
-                                  placeholder="e.g. light_1.jpg" 
-                                  value={editFormData.images?.[0] || ''} 
-                                  onChange={(e) => setEditFormData({...editFormData, images: [e.target.value]})} 
+                                <input
+                                  type="text"
+                                  placeholder="e.g. light_1.jpg"
+                                  value={editFormData.images?.[0] || ''}
+                                  onChange={(e) => setEditFormData({ ...editFormData, images: [e.target.value] })}
                                 />
                               </div>
                             </div>
@@ -474,21 +474,21 @@ const ProductList = () => {
 
 function App() {
   const [activeTab, setActiveTab] = useState('products');
-  
+
   // Check if Supabase is configured
-  const isSupabaseConfigured = 
-    import.meta.env.VITE_SUPABASE_URL && 
+  const isSupabaseConfigured =
+    import.meta.env.VITE_SUPABASE_URL &&
     import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
     import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!isSupabaseConfigured) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh', 
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
         padding: '2rem',
         textAlign: 'center',
         background: '#0f172a',
